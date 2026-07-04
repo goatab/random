@@ -1,0 +1,37 @@
+import numpy as np 
+import pandas as pd 
+from sklearn.model_selection import cross_val_score 
+from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
+
+df['sent_reminder'] = (df['sent_reminder'] == 'yes').astype(int) 
+df['is_weekend'] = (df['is_weekend'] == 'yes').astype(int) 
+
+labels = (df['no_show'] == 'Yes').astype(int) 
+data = df.drop(columns=['no_show']) 
+
+def cv_decision_tree(is_clf, data, labels, max_depth, cv): 
+    if is_clf: 
+        model = DecisionTreeClassifier(max_depth=max_depth, random_state=42) 
+    else: 
+        model = DecisionTreeRegressor(max_depth=max_depth, random_state=42) 
+    
+    return cross_val_score(model, data, labels, cv=cv) 
+
+best_mean = 0 
+best_depth = None 
+is_clf = True 
+cv_folds = 5 
+
+for depth in range(3, 8): 
+    scores = cv_decision_tree(is_clf, data, labels, max_depth=depth, cv=cv_folds) 
+    mean, std2 = scores.mean(), scores.std() 
+    
+    print(f'95% confidence for depth {depth} : {mean:.4f} +/- {std2:.4f}\n') 
+    
+    if mean > best_mean: 
+        best_mean, best_depth = mean, depth 
+
+print(f'Best Depth: {best_depth} with Mean Score: {best_mean:.4f}')
+
+final_model = DecisionTreeClassifier(max_depth=best_depth, random_state=42)
+final_model.fit(data, labels)
